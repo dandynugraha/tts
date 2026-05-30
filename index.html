@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>TTS Swalawe - PPM BI</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal: #3DB8A4;
+  --teal-dark: #2A9B89;
+  --teal-light: #E0F5F1;
+  --teal-glow: rgba(61,184,164,0.3);
+  --bg: #F4FAFA;
+  --cell-bg: #FFFFFF;
+  --cell-border: #3DB8A4;
+  --cell-revealed: #E0F5F1;
+  --text: #1A3A35;
+  --num-color: #2A9B89;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== LOADING SCREEN ===== */
+#loading-screen {
+  position: fixed; inset:0; z-index:1000;
+  background: white;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+#loading-screen.hide {
+  opacity: 0; visibility: hidden;
+}
+
+.logo-container {
+  width: 140px; height: 140px;
+  animation: logoPulse 2s ease-in-out infinite;
+}
+.logo-container svg { width:100%; height:100%; }
+
+@keyframes logoPulse {
+  0%,100% { transform: scale(1); opacity:1; }
+  50% { transform: scale(1.06); opacity:0.85; }
+}
+
+.loading-title {
+  margin-top: 24px;
+  font-size: 22px; font-weight: 900;
+  color: var(--teal-dark);
+  letter-spacing: 2px;
+}
+.loading-sub {
+  margin-top: 8px;
+  font-size: 13px; font-weight: 700;
+  color: var(--teal);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+.loading-bar-wrap {
+  margin-top: 32px;
+  width: 180px; height: 4px;
+  background: var(--teal-light);
+  border-radius: 4px; overflow: hidden;
+}
+.loading-bar {
+  height: 100%; width: 0%;
+  background: var(--teal);
+  border-radius: 4px;
+  animation: loadBar 2.2s ease-in-out forwards;
+}
+@keyframes loadBar {
+  0% { width:0%; }
+  60% { width:75%; }
+  100% { width:100%; }
+}
+
+/* ===== MAIN GAME ===== */
+#game { display:none; }
+#game.show { display:block; }
+
+.game-header {
+  background: var(--teal);
+  padding: 16px 20px;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 2px 12px var(--teal-glow);
+  position: sticky; top:0; z-index:10;
+}
+.header-logo { width:36px; height:36px; }
+.header-logo svg { width:100%; height:100%; }
+.header-text { color:white; font-weight:900; font-size:18px; letter-spacing:1px; }
+.header-sub { color:rgba(255,255,255,0.8); font-size:11px; font-weight:700; letter-spacing:2px; }
+
+.score-bar {
+  background: var(--teal-dark);
+  padding: 10px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  color: white; font-size: 13px; font-weight: 700;
+}
+.score-bar span { opacity:0.9; }
+.btn-reveal-all {
+  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-reveal-all:hover { background: rgba(255,255,255,0.35); }
+
+.grid-wrapper {
+  padding: 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.grid-container {
+  display: inline-grid;
+  gap: 2px;
+  margin: 0 auto;
+}
+
+.grid-cell {
+  width: 32px; height: 32px;
+  position: relative;
+}
+.grid-cell.empty { background: transparent; }
+.grid-cell.filled {
+  background: var(--cell-bg);
+  border: 1.5px solid var(--cell-border);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900;
+  color: transparent;
+  transition: all 0.25s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.grid-cell.filled:active { transform: scale(0.92); }
+.grid-cell.filled.revealed {
+  background: var(--cell-revealed);
+  color: var(--teal-dark);
+  border-color: var(--teal-dark);
+}
+.grid-cell .cell-num {
+  position: absolute;
+  top: 1px; left: 2px;
+  font-size: 7px; font-weight: 900;
+  color: var(--num-color);
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Word labels (MENDATAR / MENURUN section) */
+.section-title {
+  padding: 16px 20px 8px;
+  font-size: 14px; font-weight: 900;
+  color: var(--teal-dark);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--teal-light);
+  margin: 0 16px;
+}
+
+.word-list {
+  padding: 8px 16px 16px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.word-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid var(--teal-light);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.word-item:active { transform: scale(0.98); background: var(--teal-light); }
+.word-item.done { background: var(--cell-revealed); border-color: var(--teal); }
+
+.word-num {
+  width: 28px; height: 28px;
+  background: var(--teal);
+  color: white;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900;
+  flex-shrink: 0;
+}
+.word-item.done .word-num { background: var(--teal-dark); }
+
+.word-answer {
+  flex:1;
+  font-size: 14px; font-weight: 700;
+  color: var(--text);
+  letter-spacing: 2px;
+}
+.word-answer.hidden { color: #ccc; }
+
+.btn-img {
+  background: var(--teal-light);
+  border: 1px solid var(--teal);
+  color: var(--teal-dark);
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.btn-img:hover { background: var(--teal); color: white; }
+
+/* Image modal */
+.modal-overlay {
+  position: fixed; inset:0; z-index:100;
+  background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity:0; visibility:hidden;
+  transition: all 0.3s;
+}
+.modal-overlay.show { opacity:1; visibility:visible; }
+
+.modal-box {
+  background: white;
+  border-radius: 16px;
+  max-width: 400px; width: 100%;
+  overflow: hidden;
+  transform: scale(0.9);
+  transition: transform 0.3s;
+}
+.modal-overlay.show .modal-box { transform: scale(1); }
+
+.modal-img-wrap {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: var(--teal-light);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.modal-img-wrap img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.modal-img-placeholder {
+  text-align: center; color: var(--teal); font-weight:700; font-size:14px; padding:20px;
+}
+.modal-footer {
+  padding: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-label {
+  font-weight: 900; font-size: 16px; color: var(--teal-dark);
+}
+.modal-close {
+  background: var(--teal);
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer;
+}
+
+.footer-pad { height: 40px; }
+
+@media (min-width:600px) {
+  .grid-cell { width:38px; height:38px; }
+  .grid-cell.filled { font-size:16px; }
+  .grid-cell .cell-num { font-size:8px; }
+  .grid-wrapper { display:flex; justify-content:center; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div class="logo-container">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Book base -->
+      <path d="M50 155 Q100 145 100 145 Q100 145 150 155" stroke="#3DB8A4" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M45 165 Q100 153 100 153 Q100 153 155 165" stroke="#3DB8A4" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <!-- Center petal (tall) -->
+      <ellipse cx="100" cy="90" rx="16" ry="55" fill="#3DB8A4"/>
+      <!-- Left petals -->
+      <ellipse cx="68" cy="110" rx="22" ry="14" fill="#3DB8A4" transform="rotate(-40 68 110)"/>
+      <ellipse cx="50" cy="125" rx="22" ry="16" fill="#3DB8A4" transform="rotate(-25 50 125)"/>
+      <!-- Right petals -->
+      <ellipse cx="132" cy="110" rx="22" ry="14" fill="#3DB8A4" transform="rotate(40 132 110)"/>
+      <ellipse cx="150" cy="125" rx="22" ry="16" fill="#3DB8A4" transform="rotate(25 150 125)"/>
+      <!-- White gaps between petals -->
+      <path d="M100 148 L90 100 Q100 60 100 60 Q100 60 110 100 Z" fill="white" opacity="0.95"/>
+      <path d="M100 148 L75 120 Q60 130 60 130 L88 148 Z" fill="white" opacity="0.95"/>
+      <path d="M100 148 L125 120 Q140 130 140 130 L112 148 Z" fill="white" opacity="0.95"/>
+    </svg>
+  </div>
+  <div class="loading-title">PPM BI</div>
+  <div class="loading-sub">TTS Swalawe</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+</div>
+
+<!-- GAME -->
+<div id="game">
+  <div class="game-header">
+    <div class="header-logo">
+      <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 155 Q100 145 100 145 Q100 145 150 155" stroke="white" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M45 165 Q100 153 100 153 Q100 153 155 165" stroke="white" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <ellipse cx="100" cy="90" rx="16" ry="55" fill="white"/>
+        <ellipse cx="68" cy="110" rx="22" ry="14" fill="white" transform="rotate(-40 68 110)"/>
+        <ellipse cx="50" cy="125" rx="22" ry="16" fill="white" transform="rotate(-25 50 125)"/>
+        <ellipse cx="132" cy="110" rx="22" ry="14" fill="white" transform="rotate(40 132 110)"/>
+        <ellipse cx="150" cy="125" rx="22" ry="16" fill="white" transform="rotate(25 150 125)"/>
+        <path d="M100 148 L90 100 Q100 60 100 60 Q100 60 110 100 Z" fill="#3DB8A4"/>
+        <path d="M100 148 L75 120 Q60 130 60 130 L88 148 Z" fill="#3DB8A4"/>
+        <path d="M100 148 L125 120 Q140 130 140 130 L112 148 Z" fill="#3DB8A4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="header-text">TTS Swalawe</div>
+      <div class="header-sub">PPM BI Edition</div>
+    </div>
+  </div>
+
+  <div class="score-bar">
+    <span id="score-text">0 / 20 terjawab</span>
+    <button class="btn-reveal-all" onclick="revealAll()">Buka Semua</button>
+  </div>
+
+  <div class="grid-wrapper">
+    <div class="grid-container" id="grid"></div>
+  </div>
+
+  <div class="section-title">Mendatar →</div>
+  <div class="word-list" id="list-across"></div>
+
+  <div class="section-title">Menurun ↓</div>
+  <div class="word-list" id="list-down"></div>
+
+  <div class="footer-pad"></div>
+</div>
+
+<!-- IMAGE MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-img-wrap" id="modal-img-wrap">
+      <div class="modal-img-placeholder" id="modal-placeholder">Gambar akan muncul di sini</div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-label" id="modal-label"></div>
+      <button class="modal-close" onclick="closeModal()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== WORD DATA =====
+const words = [
+  // MENDATAR (across)
+  { id:1,  word:'BERDIRI',   row:0,  col:2,  dir:'across', img:'berdiri.jpg' },
+  { id:2,  word:'REPOTAN',   row:6,  col:0,  dir:'across', img:'repotan.jpg' },
+  { id:3,  word:'KAGETT',    row:8,  col:5,  dir:'across', img:'kagett.jpg' },
+  { id:4,  word:'PINJEMM',   row:10, col:2,  dir:'across', img:'pinjemm.jpg' },
+  { id:5,  word:'NANYA',     row:12, col:8,  dir:'across', img:'nanya.jpg' },
+  { id:6,  word:'REBUSS',    row:14, col:0,  dir:'across', img:'rebuss.jpg' },
+  { id:7,  word:'JAUHH',     row:16, col:3,  dir:'across', img:'jauhh.jpg' },
+  { id:8,  word:'HALO',      row:18, col:8,  dir:'across', img:'halo.jpg' },
+  { id:9,  word:'FOTOO',     row:20, col:0,  dir:'across', img:'fotoo.jpg' },
+  { id:10, word:'ASINN',     row:22, col:6,  dir:'across', img:'asinn.jpg' },
+  // MENURUN (down)
+  { id:11, word:'BAHAYA',    row:0,  col:2,  dir:'down', img:'bahaya.jpg' },
+  { id:12, word:'SEBELAH',   row:0,  col:11, dir:'down', img:'sebelah.jpg' },
+  { id:13, word:'SIANG',     row:1,  col:9,  dir:'down', img:'siang.jpg' },
+  { id:14, word:'TAKUT',     row:8,  col:0,  dir:'down', img:'takut.jpg' },
+  { id:15, word:'MAUAU',     row:11, col:9,  dir:'down', img:'mauau.jpg' },
+  { id:16, word:'DUDUKK',    row:7,  col:1,  dir:'down', img:'dudukk.jpg' },
+  { id:17, word:'KANGGURU',  row:13, col:13, dir:'down', img:'kangguru.jpg' },
+  { id:18, word:'IDIIH',     row:17, col:5,  dir:'down', img:'idiih.jpg' },
+  { id:19, word:'DEKETTT',   row:15, col:12, dir:'down', img:'dekettt.jpg' },
+  { id:20, word:'MATALURUS', row:14, col:15, dir:'down', img:'matalurus.jpg' },
+];
+
+const IMG_FOLDER = 'assets/';
+
+// Build grid data
+let maxRow = 0, maxCol = 0;
+const cellMap = {}; // "row,col" -> { letter, wordIds:[], num:null }
+
+words.forEach(w => {
+  for (let i = 0; i < w.word.length; i++) {
+    const r = w.dir === 'across' ? w.row : w.row + i;
+    const c = w.dir === 'across' ? w.col + i : w.col;
+    const key = r + ',' + c;
+    if (!cellMap[key]) cellMap[key] = { letter: w.word[i], wordIds: [], num: null };
+    cellMap[key].wordIds.push(w.id);
+    if (i === 0 && !cellMap[key].num) cellMap[key].num = w.id;
+    if (r > maxRow) maxRow = r;
+    if (c > maxCol) maxCol = c;
+  }
+});
+
+const ROWS = maxRow + 1;
+const COLS = maxCol + 1;
+
+// Track revealed state
+const revealedCells = new Set();
+const revealedWords = new Set();
+let revealCount = 0;
+
+function buildGrid() {
+  const grid = document.getElementById('grid');
+  grid.style.gridTemplateColumns = `repeat(${COLS}, 32px)`;
+  grid.style.gridTemplateRows = `repeat(${ROWS}, 32px)`;
+
+  // Adjust cell size for desktop
+  if (window.innerWidth >= 600) {
+    grid.style.gridTemplateColumns = `repeat(${COLS}, 38px)`;
+    grid.style.gridTemplateRows = `repeat(${ROWS}, 38px)`;
+  }
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const div = document.createElement('div');
+      div.className = 'grid-cell';
+      const key = r + ',' + c;
+      const cell = cellMap[key];
+      if (cell) {
+        div.classList.add('filled');
+        div.dataset.key = key;
+        div.textContent = cell.letter;
+        if (cell.num) {
+          const numSpan = document.createElement('span');
+          numSpan.className = 'cell-num';
+          numSpan.textContent = cell.num;
+          div.appendChild(numSpan);
+        }
+        div.addEventListener('click', () => handleCellClick(key));
+      } else {
+        div.classList.add('empty');
+      }
+      grid.appendChild(div);
+    }
+  }
+}
+
+function handleCellClick(key) {
+  const cell = cellMap[key];
+  if (!cell) return;
+  // Reveal all cells of the word(s) this cell belongs to
+  cell.wordIds.forEach(wid => revealWord(wid));
+  updateScore();
+}
+
+function revealWord(wid) {
+  if (revealedWords.has(wid)) return;
+  revealedWords.add(wid);
+  const w = words.find(x => x.id === wid);
+  for (let i = 0; i < w.word.length; i++) {
+    const r = w.dir === 'across' ? w.row : w.row + i;
+    const c = w.dir === 'across' ? w.col + i : w.col;
+    const key = r + ',' + c;
+    revealedCells.add(key);
+    const el = document.querySelector(`.grid-cell[data-key="${key}"]`);
+    if (el) el.classList.add('revealed');
+  }
+  // Update word list item
+  const listItem = document.getElementById('word-' + wid);
+  if (listItem) {
+    listItem.classList.add('done');
+    const ans = listItem.querySelector('.word-answer');
+    if (ans) { ans.textContent = w.word; ans.classList.remove('hidden'); }
+  }
+}
+
+function revealAll() {
+  words.forEach(w => revealWord(w.id));
+  updateScore();
+}
+
+function updateScore() {
+  const count = revealedWords.size;
+  document.getElementById('score-text').textContent = count + ' / 20 terjawab';
+}
+
+function buildWordLists() {
+  const acrossList = document.getElementById('list-across');
+  const downList = document.getElementById('list-down');
+
+  const across = words.filter(w => w.dir === 'across').sort((a,b) => a.id - b.id);
+  const down = words.filter(w => w.dir === 'down').sort((a,b) => a.id - b.id);
+
+  across.forEach(w => acrossList.appendChild(createWordItem(w)));
+  down.forEach(w => downList.appendChild(createWordItem(w)));
+}
+
+function createWordItem(w) {
+  const div = document.createElement('div');
+  div.className = 'word-item';
+  div.id = 'word-' + w.id;
+
+  const num = document.createElement('div');
+  num.className = 'word-num';
+  num.textContent = w.id;
+
+  const ans = document.createElement('div');
+  ans.className = 'word-answer hidden';
+  ans.textContent = '•'.repeat(w.word.length);
+
+  const imgBtn = document.createElement('div');
+  imgBtn.className = 'btn-img';
+  imgBtn.innerHTML = '🖼';
+  imgBtn.title = 'Lihat gambar';
+  imgBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openModal(w);
+  });
+
+  div.addEventListener('click', () => {
+    revealWord(w.id);
+    updateScore();
+  });
+
+  div.appendChild(num);
+  div.appendChild(ans);
+  div.appendChild(imgBtn);
+  return div;
+}
+
+function openModal(w) {
+  const modal = document.getElementById('modal');
+  const wrap = document.getElementById('modal-img-wrap');
+  const label = document.getElementById('modal-label');
+
+  label.textContent = '#' + w.id + ' — ' + (revealedWords.has(w.id) ? w.word : '???');
+
+  // Try to load image
+  wrap.innerHTML = '';
+  const img = new Image();
+  img.src = IMG_FOLDER + w.img;
+  img.alt = w.word;
+  img.onerror = () => {
+    wrap.innerHTML = '<div class="modal-img-placeholder">📁 ' + w.img + '<br><small>Taruh file di folder <b>assets/</b></small></div>';
+  };
+  img.onload = () => {
+    wrap.innerHTML = '';
+    wrap.appendChild(img);
+  };
+
+  // Show placeholder while loading
+  wrap.innerHTML = '<div class="modal-img-placeholder">Memuat gambar...</div>';
+  const tempImg = new Image();
+  tempImg.src = IMG_FOLDER + w.img;
+  tempImg.onload = () => { wrap.innerHTML = ''; wrap.appendChild(tempImg); };
+  tempImg.onerror = () => {
+    wrap.innerHTML = '<div class="modal-img-placeholder">📁 <b>' + w.img + '</b><br><small>Taruh file di folder <b>assets/</b></small></div>';
+  };
+
+  modal.classList.add('show');
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal') && !e.target.classList.contains('modal-close')) return;
+  document.getElementById('modal').classList.remove('show');
+}
+
+// INIT
+window.addEventListener('DOMContentLoaded', () => {
+  buildGrid();
+  buildWordLists();
+
+  // Hide loading screen after animation
+  setTimeout(() => {
+    document.getElementById('loading-screen').classList.add('hide');
+    document.getElementById('game').classList.add('show');
+  }, 2600);
+});
+</script>
+</body>
+</html>
