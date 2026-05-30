@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>TTS Swalawe - PPM BI</title>
+<title>TTSwalawe - PPM BI</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -40,18 +40,7 @@ body {
 #loading-screen.hide {
   opacity: 0; visibility: hidden;
 }
-
-.logo-container {
-  width: 140px; height: 140px;
-  animation: logoPulse 2s ease-in-out infinite;
-}
-.logo-container svg { width:100%; height:100%; }
-
-@keyframes logoPulse {
-  0%,100% { transform: scale(1); opacity:1; }
-  50% { transform: scale(1.06); opacity:0.85; }
-}
-
+  
 .loading-title {
   margin-top: 24px;
   font-size: 22px; font-weight: 900;
@@ -94,8 +83,6 @@ body {
   box-shadow: 0 2px 12px var(--teal-glow);
   position: sticky; top:0; z-index:10;
 }
-.header-logo { width:36px; height:36px; }
-.header-logo svg { width:100%; height:100%; }
 .header-text { color:white; font-weight:900; font-size:18px; letter-spacing:1px; }
 .header-sub { color:rgba(255,255,255,0.8); font-size:11px; font-weight:700; letter-spacing:2px; }
 
@@ -290,7 +277,6 @@ body {
 
 <!-- LOADING SCREEN -->
 <div id="loading-screen">
-  <div class="logo-container">
     <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
       <!-- Book base -->
       <path d="M50 155 Q100 145 100 145 Q100 145 150 155" stroke="#3DB8A4" stroke-width="7" fill="none" stroke-linecap="round"/>
@@ -310,14 +296,13 @@ body {
     </svg>
   </div>
   <div class="loading-title">PPM BI</div>
-  <div class="loading-sub">TTS Swalawe</div>
+  <div class="loading-sub">TTSwalawe</div>
   <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
 </div>
 
 <!-- GAME -->
 <div id="game">
   <div class="game-header">
-    <div class="header-logo">
       <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
         <path d="M50 155 Q100 145 100 145 Q100 145 150 155" stroke="white" stroke-width="7" fill="none" stroke-linecap="round"/>
         <path d="M45 165 Q100 153 100 153 Q100 153 155 165" stroke="white" stroke-width="7" fill="none" stroke-linecap="round"/>
@@ -332,7 +317,7 @@ body {
       </svg>
     </div>
     <div>
-      <div class="header-text">TTS Swalawe</div>
+      <div class="header-text">TTSwalawe</div>
       <div class="header-sub">PPM BI Edition</div>
     </div>
   </div>
